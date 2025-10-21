@@ -1,7 +1,10 @@
 package main.java.com.bhavesh.shell;
 
 import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -9,6 +12,7 @@ public class Main {
     
 
     public static void main(String[] args) {
+        final String EXE = ".exe";
         Scanner sc = new Scanner(System.in);
         while(true){
             System.out.print("$ ");
@@ -25,12 +29,55 @@ public class Main {
                 System.out.println(result);
             } 
             else if(Objects.equals(command,"type")){
-                System.out.println(checkForType(result));
+                //adding exe because windows is not directly finding the normal names
+                System.out.println(checkForType(result+EXE));
             } 
+            else if(checkIfItIsAnExecutable(command + EXE, rest)){
+                executeTheExecutable(command, rest);
+            }
             else {
-                System.out.println(result + ": not found");
+                System.out.println(command + ": not found");
             }
         }
+    }
+
+    static boolean executeTheExecutable(String command,String rest[]){
+        try{
+            List<String> commands = new ArrayList();
+            commands.add(command);
+            for(String data : rest){
+                commands.add(data);
+            }
+            ProcessBuilder processBuilder = new ProcessBuilder(commands);
+            processBuilder.inheritIO();
+            Process process = processBuilder.start();
+            // String ans = new String(process.getInputStream().readAllBytes());
+            // System.out.println(ans);
+            int exitCode = process.waitFor();
+            if(exitCode != 0){
+                return false;
+            }
+        } catch (Exception e){
+            System.out.println(e);
+            return false;
+        }
+        return true;
+    }
+
+    static boolean checkIfItIsAnExecutable(String command,String rest[]){
+
+        String separator = File.pathSeparator;
+        String pathCommandsString = System.getenv("PATH");
+        String pathCommands[] = pathCommandsString.split(separator);
+
+        for(String pathCommand : pathCommands){
+            File file = new File(pathCommand,command);
+            if(file.exists() && file.canExecute()){
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static String checkForType(String command){
