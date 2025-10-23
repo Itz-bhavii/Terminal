@@ -1,7 +1,9 @@
-package main.java.com.bhavesh.shell;
+package com.bhavesh.shell;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +34,12 @@ public class Main {
                 //adding exe because windows is not directly finding the normal names
                 System.out.println(checkForType(result+EXE));
             } 
+            else if(Objects.equals(command,"pwd")){
+                System.out.println(getCurrentWorkingDirectory()); //works the smae
+            }
+            else if(Objects.equals(command,"cd")){
+                changeDirectory(command,result);
+            }
             else if(checkIfItIsAnExecutable(command + EXE, rest)){
                 executeTheExecutable(command, rest);
             }
@@ -39,6 +47,54 @@ public class Main {
                 System.out.println(command + ": not found");
             }
         }
+    }
+
+    private static void changeDirectory(String command,String receivedPath) {
+        if(Objects.equals(receivedPath,"~")){
+            String homeDir = System.getProperty("user.home");
+            if(!setCurrentWorkingDirectory(homeDir)){
+                System.out.println(command +":"+ homeDir + ": " + "No such file or directory");
+            }
+            return;
+        }
+        else if(receivedPath.startsWith("~/")){
+            receivedPath = System.getProperty("user.home") + receivedPath.substring(1);
+        }
+        
+        File file = new File(receivedPath);
+        try{
+            String path = file.getCanonicalPath();
+            File canonicalFile = new File(path);
+            if(canonicalFile.exists() && canonicalFile.isDirectory()){
+                if(!setCurrentWorkingDirectory(path)){
+                    System.out.println(command +":"+ path + ": " + "Could not change directory");
+                }
+            }
+            else {
+                System.out.println(command +":"+ receivedPath + ": " + "No such file or directory");
+            }
+            
+        } catch (IOException e){
+            System.out.println(command +":"+ receivedPath + ": " + "No such file or directory");
+            
+        }                
+    }
+
+    static boolean setCurrentWorkingDirectory(String path){
+        File file = new File(path);
+        // System.out.println("scwd");
+        if(file.isDirectory()){
+            System.setProperty("user.dir", path);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    static String getCurrentWorkingDirectory(){
+        // return Paths.get("").toAbsolutePath().toString(); // also works
+        return System.getProperty("user.dir");
     }
 
     static boolean executeTheExecutable(String command,String rest[]){
