@@ -4,12 +4,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExecutablesHandler {
-    public static boolean executeTheExecutable(String command,String rest[]){
+public class ExecutableHandler {
+    public static boolean executeTheExecutable(String command,String cmdArgs[]){
         try{
-            List<String> commands = new ArrayList();
+            List<String> commands = new ArrayList<>();
             commands.add(command);
-            for(String data : rest){
+            for(String data : cmdArgs){
                 commands.add(data);
             }
             ProcessBuilder processBuilder = new ProcessBuilder(commands);
@@ -28,7 +28,7 @@ public class ExecutablesHandler {
         return true;
     }
 
-    public static boolean checkIfItIsAnExecutable(String command,String rest[]){
+    public static boolean checkIfItIsAnExecutable(String command){
 
         String separator = File.pathSeparator;
         String pathCommandsString = System.getenv("PATH");
