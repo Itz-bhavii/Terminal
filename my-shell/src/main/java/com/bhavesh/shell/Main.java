@@ -6,6 +6,8 @@ import java.util.Scanner;
 
 import com.bhavesh.shell.commands.CatCommand;
 import com.bhavesh.shell.commands.EchoCommand;
+import com.bhavesh.shell.commands.PwdCommand;
+import com.bhavesh.shell.commands.TypeCommand;
 
 
 public class Main {
@@ -26,34 +28,31 @@ public class Main {
             if(tokens.length == 0) continue;
             String command = tokens[0];
             String cmdArgs[] = Arrays.copyOfRange(tokens, 1, tokens.length);
-
+            RedirectionHandler rh;
+            try {
+                rh = new RedirectionHandler(cmdArgs);
+            } catch (FileNotFoundException e) {
+                System.err.println("Error: Cannot create file - " + e.getMessage());
+                continue;
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error: " + e.getMessage());
+                continue;
+            }
             if(command.equals(EXIT)){
                 sc.close();
                 System.exit(0);
 
             } else if(command.equals(ECHO)){
-                try {
-                    RedirectionHandler rh = new RedirectionHandler(cmdArgs);
-                    EchoCommand echoCommand = new EchoCommand();
-                    echoCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
-                    rh.close();
-                } catch (FileNotFoundException e) {
-                    System.err.println("Error: Cannot create file - " + e.getMessage());
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Error: " + e.getMessage());
-                }
+                EchoCommand echoCommand = new EchoCommand();
+                echoCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
                 
             } else if(command.equals(TYPE)){
-                //adding exe because windows is not directly finding the normal names
-                if(cmdArgs.length > 0){
-                    System.out.println(TypeHandler.checkForType(cmdArgs[0]));
-                } else {
-                    System.out.println("type: expected argument");
-                }
+                TypeCommand typeCommand = new TypeCommand();
+                typeCommand.execute(rh.getCleanedArgs(),rh.getStdOut() , rh.getStdErr());
 
             } else if(command.equals(PWD)){
-                String currentDirectory = DirectoryHandler.getCurrentWorkingDirectory();
-                System.out.println(currentDirectory); //works the smae
+                PwdCommand pwdCommand = new PwdCommand();
+                pwdCommand.execute(rh.getCleanedArgs(), rh.getStdOut(), rh.getStdErr());
 
             } else if(command.equals(CD)){
                 if(cmdArgs.length > 0){
@@ -63,23 +62,16 @@ public class Main {
                 }
                 
             } else if(command.equals(CAT)){
-                try {
-                    RedirectionHandler rh = new RedirectionHandler(cmdArgs);
                     CatCommand catCommand = new CatCommand();
                     catCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
-                    rh.close();
-                } catch (FileNotFoundException e) {
-                    System.err.println("Error: Cannot create file - " + e.getMessage());
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Error: " + e.getMessage());
-                }
-
+                
             } else if(ExecutableHandler.checkIfItIsAnExecutable(command + EXE)){
                 ExecutableHandler.executeTheExecutable(command, cmdArgs);
-
+                
             } else {
                 System.out.println(command + ": not found");
             }
+            rh.close();
         }
     }
 
