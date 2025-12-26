@@ -1,11 +1,10 @@
 package com.bhavesh.shell;
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import com.bhavesh.shell.commands.CatCommand;
 import com.bhavesh.shell.commands.EchoCommand;
 
 
@@ -15,6 +14,7 @@ public class Main {
     private final static String EXIT = "exit";
     private final static String ECHO = "echo";
     private final static String TYPE = "type";
+    private final static String CAT = "cat";
 
     public static void main(String[] args) {
         final String EXE = ".exe";
@@ -30,8 +30,8 @@ public class Main {
             if(command.equals(EXIT)){
                 sc.close();
                 System.exit(0);
-            }
-            else if(command.equals(ECHO)){
+
+            } else if(command.equals(ECHO)){
                 try {
                     RedirectionHandler rh = new RedirectionHandler(cmdArgs);
                     EchoCommand echoCommand = new EchoCommand();
@@ -43,30 +43,41 @@ public class Main {
                     System.err.println("Error: " + e.getMessage());
                 }
                 
-            } 
-            else if(command.equals(TYPE)){
+            } else if(command.equals(TYPE)){
                 //adding exe because windows is not directly finding the normal names
                 if(cmdArgs.length > 0){
                     System.out.println(TypeHandler.checkForType(cmdArgs[0]));
                 } else {
                     System.out.println("type: expected argument");
                 }
-            } 
-            else if(command.equals(PWD)){
+
+            } else if(command.equals(PWD)){
                 String currentDirectory = DirectoryHandler.getCurrentWorkingDirectory();
                 System.out.println(currentDirectory); //works the smae
-            }
-            else if(command.equals(CD)){
+
+            } else if(command.equals(CD)){
                 if(cmdArgs.length > 0){
                     DirectoryHandler.changeDirectory(command,cmdArgs[0]);
                  } else {
                     DirectoryHandler.changeDirectory(command,"~");
                 }
-            }
-            else if(ExecutableHandler.checkIfItIsAnExecutable(command + EXE)){
+                
+            } else if(command.equals(CAT)){
+                try {
+                    RedirectionHandler rh = new RedirectionHandler(cmdArgs);
+                    CatCommand catCommand = new CatCommand();
+                    catCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
+                    rh.close();
+                } catch (FileNotFoundException e) {
+                    System.err.println("Error: Cannot create file - " + e.getMessage());
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Error: " + e.getMessage());
+                }
+
+            } else if(ExecutableHandler.checkIfItIsAnExecutable(command + EXE)){
                 ExecutableHandler.executeTheExecutable(command, cmdArgs);
-            }
-            else {
+
+            } else {
                 System.out.println(command + ": not found");
             }
         }
