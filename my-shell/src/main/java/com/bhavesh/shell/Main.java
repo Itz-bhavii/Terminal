@@ -1,7 +1,12 @@
 package com.bhavesh.shell;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Scanner;
+
+import com.bhavesh.shell.commands.EchoCommand;
 
 
 public class Main {
@@ -27,7 +32,17 @@ public class Main {
                 System.exit(0);
             }
             else if(command.equals(ECHO)){
-                System.out.println(String.join(" ", cmdArgs));
+                try {
+                    RedirectionHandler rh = new RedirectionHandler(cmdArgs);
+                    EchoCommand echoCommand = new EchoCommand();
+                    echoCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
+                    rh.close();
+                } catch (FileNotFoundException e) {
+                    System.err.println("Error: Cannot create file - " + e.getMessage());
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Error: " + e.getMessage());
+                }
+                
             } 
             else if(command.equals(TYPE)){
                 //adding exe because windows is not directly finding the normal names
