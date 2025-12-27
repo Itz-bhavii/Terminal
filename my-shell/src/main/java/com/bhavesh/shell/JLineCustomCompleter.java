@@ -14,8 +14,8 @@ public class JLineCustomCompleter implements Completer{
 
     @Override
     public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
-        if(line.wordIndex() == 0){
-            ArrayList<String> matchingCommands = BuiltInCmdHandler.checkAndReturnBuiltInCommands(line.word());
+        if(line.wordIndex() == 0 && line.wordCursor() > 0){
+            ArrayList<String> matchingCommands = findMatchingCommands(line.word());
             if(matchingCommands.isEmpty()){
                 Terminal terminal = reader.getTerminal();
                 terminal.puts(InfoCmp.Capability.bell);
@@ -26,6 +26,12 @@ public class JLineCustomCompleter implements Completer{
                 }
             }
         }
+    }
+
+    private ArrayList<String> findMatchingCommands(String command){
+        ArrayList<String> matchingCommands = BuiltInCmdHandler.checkAndReturnBuiltInCommands(command);
+        matchingCommands.addAll(ExecutableHandler.checkAndReturnExecutables(command));
+        return matchingCommands;
 
     }
     

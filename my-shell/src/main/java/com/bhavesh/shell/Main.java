@@ -27,7 +27,7 @@ public class Main {
     private final static String CAT = "cat";
     
     public static void main(String[] args) throws IOException {
-        final String EXE = ".exe";
+        
         Scanner sc = new Scanner(System.in);
         Terminal terminal = TerminalBuilder
                             .builder()
@@ -88,7 +88,7 @@ public class Main {
                     CatCommand catCommand = new CatCommand();
                     catCommand.execute(rh.getCleanedArgs(),rh.getStdOut(),rh.getStdErr());
                 
-            } else if(ExecutableHandler.checkIfItIsAnExecutable(command + EXE)){
+            } else if(ExecutableHandler.checkIfItIsAnExecutable(command)){
                 ExecutableHandler.executeTheExecutable(command, cmdArgs);
                 
             } else {
