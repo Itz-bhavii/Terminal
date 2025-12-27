@@ -1,13 +1,21 @@
 package com.bhavesh.shell;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
+
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 import com.bhavesh.shell.commands.CatCommand;
 import com.bhavesh.shell.commands.EchoCommand;
 import com.bhavesh.shell.commands.PwdCommand;
 import com.bhavesh.shell.commands.TypeCommand;
+
+
 
 
 public class Main {
@@ -17,13 +25,28 @@ public class Main {
     private final static String ECHO = "echo";
     private final static String TYPE = "type";
     private final static String CAT = "cat";
-
-    public static void main(String[] args) {
+    
+    public static void main(String[] args) throws IOException {
         final String EXE = ".exe";
         Scanner sc = new Scanner(System.in);
+        Terminal terminal = TerminalBuilder
+                            .builder()
+                            .system(true)
+                            .build();
+
+        JLineCustomCompleter completer = new JLineCustomCompleter();
+        
+        LineReader reader = LineReaderBuilder
+                            .builder()
+                            .terminal(terminal)
+                            .completer(completer)
+                            .build();
+        
+
         while(true){
-            System.out.print("$ ");
-            String rawInput = sc.nextLine();
+            // System.out.print("$ ");
+            // String rawInput = sc.nextLine();
+            String rawInput = reader.readLine("$ ");
             String tokens[] = new Parser().tokenize(rawInput);
             if(tokens.length == 0) continue;
             String command = tokens[0];
