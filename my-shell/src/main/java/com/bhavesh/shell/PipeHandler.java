@@ -1,23 +1,14 @@
 package com.bhavesh.shell;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-
-import com.bhavesh.shell.commands.CatCommand;
-import com.bhavesh.shell.commands.CdCommand;
 import com.bhavesh.shell.commands.Command;
-import com.bhavesh.shell.commands.EchoCommand;
-import com.bhavesh.shell.commands.ExitCommand;
-import com.bhavesh.shell.commands.PwdCommand;
-import com.bhavesh.shell.commands.TypeCommand;
 
 public class PipeHandler {
 
@@ -29,29 +20,44 @@ public class PipeHandler {
 
     public void execute(){
         InputStream currentInp = System.in;
+        InputStream prevInp = null;
+        
+        try{
 
-        for(int i = 0 ;i < pipeSplittedCommands.size() ; i++){
-            String tokens[] = new Parser().tokenize(pipeSplittedCommands.get(i));
-            String commandName = tokens[0];
-            String cmdArgs[] = Arrays.copyOfRange(tokens, 1, tokens.length);
-            boolean isLast = (i == pipeSplittedCommands.size() - 1);
-            Command command = getCommand(commandName);
-            if(Objects.equals(command,null)) {
-                System.out.println(commandName + ": not found");
-                return;
+            for(int i = 0 ;i < pipeSplittedCommands.size() ; i++){
+                String tokens[] = new Parser().tokenize(pipeSplittedCommands.get(i));
+                String commandName = tokens[0];
+                String cmdArgs[] = Arrays.copyOfRange(tokens, 1, tokens.length);
+                boolean isLast = (i == pipeSplittedCommands.size() - 1);
+                Command command = getCommand(commandName);
+                if(command == null) {
+                    System.err.println(commandName + ": not found");
+                    if(prevInp != null && prevInp != System.in) prevInp.close();
+                    return;
+                }
+                if(isLast){
+                    command.execute(cmdArgs, currentInp, System.out, System.err);
+                } else {
+                    if(prevInp != null && prevInp != System.in){
+                        prevInp.close();
+                    }
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    PrintStream captureOutput = new PrintStream(buffer);
+    
+                    command.execute(cmdArgs, currentInp, captureOutput, System.err);
+                    captureOutput.flush();
+    
+                    prevInp = currentInp;
+                    currentInp = new ByteArrayInputStream(buffer.toByteArray());
+                }
+    
             }
-            if(isLast){
-                command.execute(cmdArgs, currentInp, System.out, System.err);
-            } else {
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                PrintStream captureOutput = new PrintStream(buffer);
-
-                command.execute(cmdArgs, currentInp, captureOutput, System.err);
-                captureOutput.flush();
-
-                currentInp = new ByteArrayInputStream(buffer.toByteArray());
-            }
-
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        } finally{
+            if(currentInp != null && currentInp != System.in){
+                 try { currentInp.close(); } catch(Exception ignored){}
+             }
         }
     }
 
@@ -68,11 +74,11 @@ public class PipeHandler {
                 isInsideDoubleQuotes = !isInsideDoubleQuotes;
                 sb.append(ch);
             } else if(ch == ' ' && (isInsideDoubleQuotes || isInsideSingleQuotes)){
-                //append space 
                 sb.append(ch);
             } else if (ch == '|' && (!isInsideDoubleQuotes && !isInsideSingleQuotes)){
-                if(sb.toString().trim().length() > 0){
-                    commands.add(sb.toString());
+                String segment = sb.toString().trim();
+                if(segment.length() > 0){
+                    commands.add(segment);
                 }
                 sb.setLength(0);
             } else {
@@ -85,42 +91,12 @@ public class PipeHandler {
         return commands;
     }
 
-    public static boolean isPipeOutsideQuotes(String rawInput){
-        boolean isInsideDoubleQuotes = false;
-        boolean isInsideSingleQuotes = false;
-        boolean isPipeOutside = true;
-        for(char ch : rawInput.toCharArray()){
-            if (ch == '\'' && !isInsideDoubleQuotes){
-                isInsideSingleQuotes = !isInsideSingleQuotes;
-            } else if (ch == '\"' && !isInsideSingleQuotes ) {
-                isInsideDoubleQuotes = !isInsideDoubleQuotes;
-            } else if (ch == '|' ){
-                if(!isInsideSingleQuotes && !isInsideDoubleQuotes){
-                    isPipeOutside = true;
-                    return isPipeOutside;
-                } else {
-                    isPipeOutside =  false;
-                }
-            }
-        }
-        return isPipeOutside;
+    public boolean hasPipe(){
+        return pipeSplittedCommands.size() > 1;
     }
 
     private Command getCommand(String commandName) {
-        if (commandName.equals(BuiltInCmdHandler.CAT)){
-            return new CatCommand();
-        } else if (commandName.equals(BuiltInCmdHandler.PWD)){
-            return new PwdCommand();
-        } else if (commandName.equals(BuiltInCmdHandler.TYPE)){
-            return new TypeCommand();
-        } else if (commandName.equals(BuiltInCmdHandler.ECHO)){
-            return new EchoCommand();
-        } else if (commandName.equals(BuiltInCmdHandler.EXIT)){
-            return new ExitCommand();
-        } else if (commandName.equals(BuiltInCmdHandler.CD)){
-            return new CdCommand();
-        }
-        return null;
+        return CommandFactory.getCommand(commandName);
         
     }
 }

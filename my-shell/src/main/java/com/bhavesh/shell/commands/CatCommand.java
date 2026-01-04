@@ -21,7 +21,7 @@ public class CatCommand implements Command {
                     stdOut.println(line);
                 }
             } catch (Exception e) {
-                System.out.println("Exception occured");
+                stdErr.println("cat: error reading input - " + e.getMessage());
             }
             return;
         }
