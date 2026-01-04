@@ -1,5 +1,6 @@
 package com.bhavesh.shell.commands;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 
 import com.bhavesh.shell.DirectoryHandler;
@@ -7,7 +8,7 @@ import com.bhavesh.shell.DirectoryHandler;
 public class PwdCommand implements Command{
 
     @Override
-    public void execute(String[] args, PrintStream stdOut, PrintStream stdErr) {
+    public void execute(String[] args,InputStream stdIn, PrintStream stdOut, PrintStream stdErr) {
         if(args.length > 0){
             stdErr.println("pwd: no args expected");
             return;

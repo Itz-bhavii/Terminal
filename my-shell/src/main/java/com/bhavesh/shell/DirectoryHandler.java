@@ -8,11 +8,11 @@ public class DirectoryHandler {
 
     static String currentDirectory = System.getProperty("user.dir");
 
-    public static void changeDirectory(String command,String receivedPath) {
+    public static void changeDirectory(String receivedPath) {
         if(Objects.equals(receivedPath,"~")){
             String homeDir = System.getProperty("user.home");
             if(!setCurrentWorkingDirectory(homeDir)){
-                System.out.println(command +":"+ homeDir + ": " + "No such file or directory");
+                System.out.println("echo" +":"+ homeDir + ": " + "No such file or directory");
             }
             return;
         }
@@ -26,15 +26,15 @@ public class DirectoryHandler {
             File canonicalFile = new File(path);
             if(canonicalFile.exists() && canonicalFile.isDirectory()){
                 if(!setCurrentWorkingDirectory(path)){
-                    System.out.println(command +":"+ path + ": " + "Could not change directory");
+                    System.out.println("echo" +":"+ path + ": " + "Could not change directory");
                 }
             }
             else {
-                System.out.println(command +":"+ receivedPath + ": " + "No such file or directory");
+                System.out.println("echo" +":"+ receivedPath + ": " + "No such file or directory");
             }
             
         } catch (IOException e){
-            System.out.println(command +":"+ receivedPath + ": " + "No such file or directory");
+            System.out.println("echo" +":"+ receivedPath + ": " + "No such file or directory");
             
         }                
     }
