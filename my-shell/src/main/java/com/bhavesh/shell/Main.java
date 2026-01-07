@@ -37,7 +37,18 @@ public class Main {
             String rawInput = reader.readLine("$ ");
             PipeHandler pipeHandler =  new PipeHandler(rawInput);
             if(pipeHandler.hasPipe()){
-                pipeHandler.execute();
+                if(pipeHandler.areCommandsValid()){
+                    if(pipeHandler.isBuiltIn()){
+                        pipeHandler.executeBuiltIn();
+                    } else if(pipeHandler.isExecutable()){
+                        pipeHandler.executeExecutables();
+                    } else {
+                        System.err.println("Error: Mixed pipelines not yet supported");
+                    }
+                } else {
+                    continue;
+                }
+
                 
             } else {
                 
