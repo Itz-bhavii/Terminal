@@ -23,7 +23,6 @@ public class PipeHandler {
         BuiltIn,
         Executable
     }
-    // List<CommandTypes> nextCommandTracker;
     List<CommandTypes> currentCommandTracker;
 
     public PipeHandler(String rawInput){
@@ -156,43 +155,6 @@ public class PipeHandler {
         }
     }
 
-    // private ByteArrayOutputStream builtinToExecutable(ByteArrayOutputStream baosIp,int indexOfCommand){
-    //     InputStream inputStream = new ByteArrayInputStream(baosIp.toByteArray());
-    //     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    //     PrintStream ps = new PrintStream(baos);
-    //     String tokens[] = tokensArray.get(indexOfCommand);
-    //     Command command = CommandFactory.getCommand(tokens[0]);
-    //     String cmdArgs[] = Arrays.copyOfRange(tokens, 1, tokens.length);
-    //     command.execute(cmdArgs ,inputStream, ps, System.err);
-
-    //     return baos;
-
-    // }
-
-    // private ByteArrayOutputStream executableToBuiltin(ByteArrayOutputStream baosIp,int indexOfCommand){
-    //     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    //     String token[] = tokensArray.get(indexOfCommand);
-    //     ProcessBuilder pb = new ProcessBuilder(token);
-    //     try {
-    //         Process p = pb.start();
-    //         if(baosIp != null){
-    //             OutputStream o = p.getOutputStream();
-    //             o.write(baosIp.toByteArray());
-    //         }
-    //         InputStream i = p.getInputStream();
-    //         BufferedReader br = new BufferedReader(new InputStreamReader(i));
-    //         String line;
-    //         PrintStream ps = new PrintStream(baos);
-    //         while ((line = br.readLine()) != null) {
-    //             ps.write(line.getBytes());
-    //         }
-    //     } catch (IOException e) {
-    //         System.err.println("Error occured" + e.getMessage());
-    //     }
-    //     return baos;
-
-
-    // }
     public void executeMixedCommands(){
         InputStream currentInput = System.in;
         
@@ -336,18 +298,14 @@ public class PipeHandler {
 
     private void initializeCurrentCommandsAndNextCommands(){
         currentCommandTracker = new ArrayList<>();
-        // nextCommandTracker = new ArrayList<>();
 
         for(int i = 0;i<commandsList.size();i++){
             if(BuiltInCmdHandler.isBuiltInCommand(commandsList.get(i))){
                 currentCommandTracker.add(CommandTypes.BuiltIn);
-                // nextCommandTracker.add(CommandTypes.BuiltIn);
             } else {
                 currentCommandTracker.add(CommandTypes.Executable);
-                // nextCommandTracker.add(CommandTypes.Executable);
             }
         }
-        // nextCommandTracker.removeFirst(); // such that it will not track the first command and will always track the next command
     }
 
     
