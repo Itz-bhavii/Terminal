@@ -6,8 +6,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,10 +17,19 @@ public class PipeHandler {
 
     List<String> pipeSplittedCommands;
     List<String> commandsList;
+    List<String[]> tokensArray;
+
+    enum CommandTypes{
+        BuiltIn,
+        Executable
+    }
+    // List<CommandTypes> nextCommandTracker;
+    List<CommandTypes> currentCommandTracker;
 
     public PipeHandler(String rawInput){
         this.pipeSplittedCommands = splitByPipes(rawInput);
-        this.commandsList = getCommandsOnly();
+        this.commandsList = getCommandsOnlyAndPopulateTokensArray();
+        initializeCurrentCommandsAndNextCommands();
     }
 
     public void executeBuiltIn(){
@@ -147,6 +156,109 @@ public class PipeHandler {
         }
     }
 
+    // private ByteArrayOutputStream builtinToExecutable(ByteArrayOutputStream baosIp,int indexOfCommand){
+    //     InputStream inputStream = new ByteArrayInputStream(baosIp.toByteArray());
+    //     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    //     PrintStream ps = new PrintStream(baos);
+    //     String tokens[] = tokensArray.get(indexOfCommand);
+    //     Command command = CommandFactory.getCommand(tokens[0]);
+    //     String cmdArgs[] = Arrays.copyOfRange(tokens, 1, tokens.length);
+    //     command.execute(cmdArgs ,inputStream, ps, System.err);
+
+    //     return baos;
+
+    // }
+
+    // private ByteArrayOutputStream executableToBuiltin(ByteArrayOutputStream baosIp,int indexOfCommand){
+    //     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    //     String token[] = tokensArray.get(indexOfCommand);
+    //     ProcessBuilder pb = new ProcessBuilder(token);
+    //     try {
+    //         Process p = pb.start();
+    //         if(baosIp != null){
+    //             OutputStream o = p.getOutputStream();
+    //             o.write(baosIp.toByteArray());
+    //         }
+    //         InputStream i = p.getInputStream();
+    //         BufferedReader br = new BufferedReader(new InputStreamReader(i));
+    //         String line;
+    //         PrintStream ps = new PrintStream(baos);
+    //         while ((line = br.readLine()) != null) {
+    //             ps.write(line.getBytes());
+    //         }
+    //     } catch (IOException e) {
+    //         System.err.println("Error occured" + e.getMessage());
+    //     }
+    //     return baos;
+
+
+    // }
+    public void executeMixedCommands(){
+        InputStream currentInput = System.in;
+        
+        try {
+            for(int i = 0; i < tokensArray.size(); i++){
+                String[] tokens = tokensArray.get(i);
+                boolean isLast = (i == tokensArray.size() - 1);
+                
+                if(currentCommandTracker.get(i) == CommandTypes.BuiltIn){
+                    // Execute built-in command
+                    Command command = CommandFactory.getCommand(tokens[0]);
+                    String[] cmdArgs = Arrays.copyOfRange(tokens, 1, tokens.length);
+                    
+                    if(isLast){
+                        command.execute(cmdArgs, currentInput, System.out, System.err);
+                    } else {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        PrintStream ps = new PrintStream(baos);
+                        command.execute(cmdArgs, currentInput, ps, System.err);
+                        ps.flush();
+                        
+                        if(currentInput != System.in) currentInput.close();
+                        currentInput = new ByteArrayInputStream(baos.toByteArray());
+                    }
+                    
+                } else {
+                    // Execute external command
+                    ProcessBuilder pb = new ProcessBuilder(tokens);
+                    pb.redirectErrorStream(true);
+                    Process p = pb.start();
+                    
+                    // Feed input to process
+                    if(currentInput != System.in){
+                        try(OutputStream os = p.getOutputStream()){
+                            currentInput.transferTo(os);
+                        }
+                        currentInput.close();
+                    }
+                    
+                    if(isLast){
+                        // Output to System.out
+                        try(BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))){
+                            String line;
+                            while((line = br.readLine()) != null){
+                                System.out.println(line);
+                            }
+                        }
+                    } else {
+                        // Capture output for next command
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        p.getInputStream().transferTo(baos);
+                        currentInput = new ByteArrayInputStream(baos.toByteArray());
+                    }
+                    
+                    p.waitFor();
+                }
+            }
+        } catch(IOException | InterruptedException e){
+            System.err.println("Error: " + e.getMessage());
+        } finally {
+            if(currentInput != System.in){
+                try { currentInput.close(); } catch(Exception ignored){}
+            }
+        }
+    }
+
     public List<String> splitByPipes(String rawInput){
         List<String> commands = new ArrayList<>();
         boolean isInsideDoubleQuotes = false;
@@ -210,14 +322,32 @@ public class PipeHandler {
         
     }
 
-    private List<String> getCommandsOnly(){
+    private List<String> getCommandsOnlyAndPopulateTokensArray(){
         List<String> cmdList = new ArrayList<>();
+        tokensArray = new ArrayList<>();
         Parser parser = new Parser();
         for(String rawLine : pipeSplittedCommands){
             String tokens[] = parser.tokenize(rawLine);
+            tokensArray.add(tokens);
             cmdList.add(tokens[0]);
         }
         return cmdList;
+    }
+
+    private void initializeCurrentCommandsAndNextCommands(){
+        currentCommandTracker = new ArrayList<>();
+        // nextCommandTracker = new ArrayList<>();
+
+        for(int i = 0;i<commandsList.size();i++){
+            if(BuiltInCmdHandler.isBuiltInCommand(commandsList.get(i))){
+                currentCommandTracker.add(CommandTypes.BuiltIn);
+                // nextCommandTracker.add(CommandTypes.BuiltIn);
+            } else {
+                currentCommandTracker.add(CommandTypes.Executable);
+                // nextCommandTracker.add(CommandTypes.Executable);
+            }
+        }
+        // nextCommandTracker.removeFirst(); // such that it will not track the first command and will always track the next command
     }
 
     

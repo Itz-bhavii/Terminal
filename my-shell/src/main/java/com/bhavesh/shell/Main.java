@@ -43,7 +43,7 @@ public class Main {
                     } else if(pipeHandler.isExecutable()){
                         pipeHandler.executeExecutables();
                     } else {
-                        System.err.println("Error: Mixed pipelines not yet supported");
+                        pipeHandler.executeMixedCommands();
                     }
                 } else {
                     continue;
